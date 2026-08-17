@@ -248,6 +248,7 @@ impl MmapInner {
         offset: u64,
         populate: bool,
         no_reserve: bool,
+        _probe_handle: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
         let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
@@ -266,6 +267,7 @@ impl MmapInner {
         offset: u64,
         populate: bool,
         no_reserve: bool,
+        _probe_handle: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
         let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
@@ -284,6 +286,7 @@ impl MmapInner {
         offset: u64,
         populate: bool,
         no_reserve: bool,
+        _probe_handle: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
         let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
@@ -302,6 +305,7 @@ impl MmapInner {
         offset: u64,
         populate: bool,
         no_reserve: bool,
+        _probe_handle: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
         let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
@@ -320,6 +324,7 @@ impl MmapInner {
         offset: u64,
         populate: bool,
         no_reserve: bool,
+        _probe_handle: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
         let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };

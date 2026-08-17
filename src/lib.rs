@@ -160,6 +160,7 @@ pub struct MmapOptions {
     stack: bool,
     populate: bool,
     no_reserve_swap: bool,
+    no_probe_handle: bool,
 }
 
 impl MmapOptions {
@@ -392,6 +393,44 @@ impl MmapOptions {
         self
     }
 
+    /// Do not probe the file handle for the widest supported protection
+    /// level when creating the mapping.
+    ///
+    /// This option only has an effect on Windows. There, by default,
+    /// creating a mapping issues up to two extra `CreateFileMappingW` calls
+    /// to discover whether the handle supports write and/or execute access,
+    /// so that the underlying section is created with the widest protection
+    /// the handle supports and the mapping can later be transitioned, e.g.
+    /// with [`Mmap::make_mut()`].
+    ///
+    /// With this option set, the section and view are created with exactly
+    /// the protection the mapping type requires (e.g. `PAGE_READONLY` and
+    /// `FILE_MAP_READ` for [`map()`][MmapOptions::map]). This guarantees a
+    /// read-only mapping never creates a writable section on the file, but
+    /// transitioning the returned mapping to a wider protection will fail.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use memmap2::MmapOptions;
+    /// use std::fs::File;
+    ///
+    /// # fn main() -> std::io::Result<()> {
+    /// let file = File::open("LICENSE-MIT")?;
+    ///
+    /// let mmap = unsafe {
+    ///     MmapOptions::new().no_probe_handle().map(&file)?
+    /// };
+    ///
+    /// assert_eq!(&b"Copyright"[..], &mmap[..9]);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn no_probe_handle(&mut self) -> &mut Self {
+        self.no_probe_handle = true;
+        self
+    }
+
     /// Creates a read-only memory map backed by a file.
     ///
     /// # Safety
@@ -435,6 +474,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| Mmap { inner })
     }
@@ -460,6 +500,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| Mmap { inner })
     }
@@ -509,6 +550,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| MmapMut { inner })
     }
@@ -552,6 +594,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| MmapMut { inner })
     }
@@ -599,6 +642,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| Mmap { inner })
     }
@@ -648,6 +692,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| MmapRaw { inner })
     }
@@ -671,6 +716,7 @@ impl MmapOptions {
             self.offset,
             self.populate,
             self.no_reserve_swap,
+            !self.no_probe_handle,
         )
         .map(|inner| MmapRaw { inner })
     }
@@ -1848,6 +1894,34 @@ mod test {
         let mmap2 = unsafe { MmapOptions::new().map(&file).unwrap() };
         (&mmap2[..]).read_exact(&mut read).unwrap();
         assert_eq!(nulls, &read);
+    }
+
+    #[test]
+    fn map_without_handle_probing() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let path = tempdir.path().join("mmap");
+
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&path)
+            .unwrap();
+        file.write_all(b"exact contents").unwrap();
+
+        let readonly = File::open(&path).unwrap();
+        let mmap = unsafe { MmapOptions::new().no_probe_handle().map(&readonly).unwrap() };
+        assert_eq!(b"exact contents", &mmap[..]);
+
+        // Without probing, the section is created strictly read-only even
+        // for a writable handle, so the mapping cannot be transitioned to
+        // writable.
+        #[cfg(windows)]
+        {
+            let mmap = unsafe { MmapOptions::new().no_probe_handle().map(&file).unwrap() };
+            assert!(mmap.make_mut().is_err());
+        }
     }
 
     #[test]

@@ -234,9 +234,10 @@ impl MmapInner {
         offset: u64,
         _populate: bool,
         _no_reserve: bool,
+        probe_handle: bool,
     ) -> io::Result<MmapInner> {
-        let write = protection_supported(handle, PAGE_READWRITE);
-        let exec = protection_supported(handle, PAGE_EXECUTE_READ);
+        let write = probe_handle && protection_supported(handle, PAGE_READWRITE);
+        let exec = probe_handle && protection_supported(handle, PAGE_EXECUTE_READ);
         let mut access = FILE_MAP_READ;
         let protection = match (write, exec) {
             (true, true) => {
@@ -267,8 +268,9 @@ impl MmapInner {
         offset: u64,
         _populate: bool,
         _no_reserve: bool,
+        probe_handle: bool,
     ) -> io::Result<MmapInner> {
-        let write = protection_supported(handle, PAGE_READWRITE);
+        let write = probe_handle && protection_supported(handle, PAGE_READWRITE);
         let mut access = FILE_MAP_READ | FILE_MAP_EXECUTE;
         let protection = if write {
             access |= FILE_MAP_WRITE;
@@ -290,8 +292,9 @@ impl MmapInner {
         offset: u64,
         _populate: bool,
         _no_reserve: bool,
+        probe_handle: bool,
     ) -> io::Result<MmapInner> {
-        let exec = protection_supported(handle, PAGE_EXECUTE_READ);
+        let exec = probe_handle && protection_supported(handle, PAGE_EXECUTE_READ);
         let mut access = FILE_MAP_READ | FILE_MAP_WRITE;
         let protection = if exec {
             access |= FILE_MAP_EXECUTE;
@@ -313,8 +316,9 @@ impl MmapInner {
         offset: u64,
         _populate: bool,
         _no_reserve: bool,
+        probe_handle: bool,
     ) -> io::Result<MmapInner> {
-        let exec = protection_supported(handle, PAGE_EXECUTE_READWRITE);
+        let exec = probe_handle && protection_supported(handle, PAGE_EXECUTE_READWRITE);
         let mut access = FILE_MAP_COPY;
         let protection = if exec {
             access |= FILE_MAP_EXECUTE;
@@ -336,9 +340,10 @@ impl MmapInner {
         offset: u64,
         _populate: bool,
         _no_reserve: bool,
+        probe_handle: bool,
     ) -> io::Result<MmapInner> {
-        let write = protection_supported(handle, PAGE_READWRITE);
-        let exec = protection_supported(handle, PAGE_EXECUTE_READ);
+        let write = probe_handle && protection_supported(handle, PAGE_READWRITE);
+        let exec = probe_handle && protection_supported(handle, PAGE_EXECUTE_READ);
         let mut access = FILE_MAP_COPY;
         let protection = if exec {
             access |= FILE_MAP_EXECUTE;
