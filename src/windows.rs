@@ -5,6 +5,7 @@ use std::fs::File;
 use std::mem::ManuallyDrop;
 use std::os::raw::c_void;
 use std::os::windows::io::{FromRawHandle, RawHandle};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{io, mem, ptr};
 
 type BOOL = i32;
@@ -533,10 +534,21 @@ fn protection_supported(handle: RawHandle, protection: DWORD) -> bool {
 }
 
 fn allocation_granularity() -> usize {
-    unsafe {
-        let mut info = mem::zeroed();
-        GetSystemInfo(&mut info);
-        info.dwAllocationGranularity as usize
+    static ALLOCATION_GRANULARITY: AtomicUsize = AtomicUsize::new(0);
+
+    match ALLOCATION_GRANULARITY.load(Ordering::Relaxed) {
+        0 => {
+            let allocation_granularity = unsafe {
+                let mut info = mem::zeroed();
+                GetSystemInfo(&mut info);
+                info.dwAllocationGranularity as usize
+            };
+
+            ALLOCATION_GRANULARITY.store(allocation_granularity, Ordering::Relaxed);
+
+            allocation_granularity
+        }
+        allocation_granularity => allocation_granularity,
     }
 }
 
