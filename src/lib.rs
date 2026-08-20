@@ -153,6 +153,7 @@ where
 /// [`map_copy()`]: MmapOptions::map_copy()
 /// [`map_copy_read_only()`]: MmapOptions::map_copy_read_only()
 #[derive(Clone, Debug, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct MmapOptions {
     offset: u64,
     len: Option<usize>,
